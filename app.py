@@ -26,8 +26,8 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AdaBoost AI Analytical Intelligence Platform</title>
-    <!-- Ultra-Clean Modern Typography Stack: Inter & Plus Jakarta Sans -->
+    <title>AI Churn Analytics Studio</title>
+    <!-- Typography Stack: Inter & Plus Jakarta Sans -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -294,7 +294,7 @@ HTML_TEMPLATE = """
             letter-spacing: 0.08em;
         }
 
-        /* --- KPIs (Clean Typography) --- */
+        /* --- KPIs --- */
         .kpi-card {
             display: flex;
             flex-direction: column;
@@ -509,8 +509,8 @@ HTML_TEMPLATE = """
     <!-- Header -->
     <header>
         <div class="logo">
-            <div class="logo-icon"><i class="fa-solid fa-brain"></i></div>
-            <span>AdaBoost <span style="font-weight: 400; opacity: 0.75;">Studio</span></span>
+            <div class="logo-icon"><i class="fa-solid fa-chart-pie"></i></div>
+            <span>AI Churn <span style="font-weight: 400; opacity: 0.75;">Analytics</span></span>
         </div>
         
         <div class="theme-selector">
@@ -663,7 +663,7 @@ HTML_TEMPLATE = """
         <!-- Dynamic History Table -->
         <div class="glass-card span-4">
             <div style="margin-bottom:0.85rem; display:flex; justify-content:space-between; align-items:center;">
-                <span class="section-label"><i class="fa-solid fa-list-check" style="color:var(--accent-glow)"></i> Analytics History Log</span>
+                <span class="section-label"><i class="fa-solid fa-list-check" style="color:var(--accent-glow)"></i> AI Churn Analytics History Log</span>
             </div>
             <div style="overflow-x: auto;">
                 <table id="logsTable">
@@ -699,7 +699,7 @@ HTML_TEMPLATE = """
 
     <!-- Footer -->
     <footer>
-        AdaBoost Classifier Engine &bull; Flask Web Deployment
+        AI Churn Analytics &bull; Flask & Pickle Web Deployment
     </footer>
 
     <!-- JavaScript -->
