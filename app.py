@@ -5,264 +5,249 @@ from flask import Flask, render_template_string, request, jsonify
 
 app = Flask(__name__)
 
-# --- Load the AdaBoost Pickle Model ---
-MODEL_PATH = "Adaboost_model.pkl"
-model = None
+# Load the AdaBoost pickle model
+MODEL_FILE = 'Adaboost_model.pkl'
 
-if os.path.exists(MODEL_PATH):
-    try:
-        with open(MODEL_PATH, "rb") as f:
-            model = pickle.load(f)
-        print("AdaBoost model loaded successfully!")
-    except Exception as e:
-        print(f"Error loading model: {e}")
-else:
-    print(f"Warning: {MODEL_PATH} not found in root directory.")
+def load_model():
+    if os.path.exists(MODEL_FILE):
+        try:
+            with open(MODEL_FILE, 'rb') as f:
+                return pickle.load(f)
+        except Exception as e:
+            print(f"Error loading model: {e}")
+            return None
+    return None
 
-# Fallback feature list based on the uploaded pkl metadata
-FEATURE_NAMES = [
-    "Age", "Gender", "Tenure", "Usage Frequency", 
-    "Support Calls", "Payment Delay", "Subscription Type", 
-    "Contract Length", "Total Spend", "Last Interaction"
+model = load_model()
+
+# Feature Metadata for UI representation
+FEATURE_KEYS = [
+    'Age', 'Gender', 'Tenure', 'Usage Frequency', 'Support Calls',
+    'Payment Delay', 'Subscription Type', 'Contract Length', 
+    'Total Spend', 'Last Interaction'
 ]
 
-if model and hasattr(model, "feature_names_in_"):
-    FEATURE_NAMES = list(model.feature_names_in_)
-
-# Categorical mapping helpers
-CATEGORICAL_MAPS = {
-    "Gender": {"Male": 0, "Female": 1},
-    "Subscription Type": {"Basic": 0, "Standard": 1, "Premium": 2},
-    "Contract Length": {"Monthly": 0, "Quarterly": 1, "Annual": 2}
-}
-
-
+# HTML/CSS/JS Combined Responsive Template
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AdaBoost AI Predictive Analytics Dashboard</title>
-    <!-- Google Fonts -->
+    <title>AdaBoost Predictive Analytics Dashboard</title>
+    <!-- Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-    <!-- FontAwesome Icons -->
+    <!-- FontAwesome icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Chart.js -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    
     <style>
-        :root {
-            /* Cyber Dark (Default) */
-            --bg-primary: #0a0e17;
-            --bg-secondary: #111827;
-            --bg-card: #1f2937;
-            --bg-input: #374151;
-            --text-main: #f9fafb;
-            --text-muted: #9ca3af;
-            --border: #374151;
+        :root[data-theme="dark"] {
+            --bg-primary: #0a0d14;
+            --bg-secondary: #121824;
+            --bg-card: rgba(22, 30, 46, 0.7);
+            --border-color: rgba(255, 255, 255, 0.08);
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
             --accent-primary: #6366f1;
-            --accent-secondary: #ec4899;
-            --accent-glow: rgba(99, 102, 241, 0.4);
-            --gradient-1: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
-            --gradient-card: linear-gradient(145deg, rgba(31, 41, 55, 0.7), rgba(17, 24, 39, 0.8));
-            --success: #10b981;
-            --danger: #ef4444;
-            --card-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-            --font-family: 'Plus Jakarta Sans', sans-serif;
+            --accent-secondary: #8b5cf6;
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --card-glow: rgba(99, 102, 241, 0.12);
+            --chart-grid: rgba(255, 255, 255, 0.05);
         }
 
-        [data-theme="neon"] {
-            --bg-primary: #05050a;
-            --bg-secondary: #0d0e1b;
-            --bg-card: #15182e;
-            --bg-input: #1e2342;
-            --text-main: #ffffff;
-            --text-muted: #8a94c0;
-            --border: #2a315c;
-            --accent-primary: #00f2fe;
-            --accent-secondary: #4facfe;
-            --accent-glow: rgba(0, 242, 254, 0.5);
-            --gradient-1: linear-gradient(135deg, #00f2fe 0%, #4facfe 50%, #000851 100%);
-            --gradient-card: linear-gradient(145deg, rgba(21, 24, 46, 0.8), rgba(13, 14, 27, 0.9));
-            --success: #00ff88;
-            --danger: #ff0055;
-        }
-
-        [data-theme="sunset"] {
-            --bg-primary: #1a0b1e;
-            --bg-secondary: #26122c;
-            --bg-card: #361a3e;
-            --bg-input: #4a2454;
-            --text-main: #fff0f5;
-            --text-muted: #c39ebc;
-            --border: #5c2d67;
-            --accent-primary: #ff512f;
-            --accent-secondary: #f09819;
-            --accent-glow: rgba(255, 81, 47, 0.4);
-            --gradient-1: linear-gradient(135deg, #ff512f 0%, #dd2476 50%, #f09819 100%);
-            --gradient-card: linear-gradient(145deg, rgba(54, 26, 62, 0.8), rgba(38, 18, 44, 0.9));
-            --success: #20e2d7;
-            --danger: #ff3366;
-        }
-
-        [data-theme="emerald"] {
-            --bg-primary: #061e14;
-            --bg-secondary: #0b2e20;
-            --bg-card: #12402e;
-            --bg-input: #1b543e;
-            --text-main: #ecfdf5;
-            --text-muted: #a7f3d0;
-            --border: #276a50;
-            --accent-primary: #10b981;
+        :root[data-theme="ocean"] {
+            --bg-primary: #07131e;
+            --bg-secondary: #0d2135;
+            --bg-card: rgba(15, 38, 61, 0.7);
+            --border-color: rgba(56, 189, 248, 0.15);
+            --text-main: #f0f9ff;
+            --text-muted: #7dd3fc;
+            --accent-primary: #0284c7;
             --accent-secondary: #06b6d4;
-            --accent-glow: rgba(16, 185, 129, 0.4);
-            --gradient-1: linear-gradient(135deg, #10b981 0%, #059669 50%, #06b6d4 100%);
-            --gradient-card: linear-gradient(145deg, rgba(18, 64, 46, 0.8), rgba(11, 46, 32, 0.9));
-            --success: #34d399;
-            --danger: #f87171;
+            --accent-gradient: linear-gradient(135deg, #0284c7 0%, #38bdf8 100%);
+            --card-glow: rgba(56, 189, 248, 0.15);
+            --chart-grid: rgba(56, 189, 248, 0.08);
+        }
+
+        :root[data-theme="sunset"] {
+            --bg-primary: #180c1e;
+            --bg-secondary: #271432;
+            --bg-card: rgba(48, 23, 62, 0.7);
+            --border-color: rgba(244, 63, 94, 0.18);
+            --text-main: #fff1f2;
+            --text-muted: #fca5a5;
+            --accent-primary: #f43f5e;
+            --accent-secondary: #fb923c;
+            --accent-gradient: linear-gradient(135deg, #f43f5e 0%, #fb923c 100%);
+            --card-glow: rgba(244, 63, 94, 0.15);
+            --chart-grid: rgba(244, 63, 94, 0.08);
+        }
+
+        :root[data-theme="cyber"] {
+            --bg-primary: #05050a;
+            --bg-secondary: #0c0c16;
+            --bg-card: rgba(20, 20, 35, 0.8);
+            --border-color: rgba(236, 72, 153, 0.25);
+            --text-main: #ffffff;
+            --text-muted: #f472b6;
+            --accent-primary: #ec4899;
+            --accent-secondary: #06b6d4;
+            --accent-gradient: linear-gradient(135deg, #ec4899 0%, #22d3ee 100%);
+            --card-glow: rgba(236, 72, 153, 0.2);
+            --chart-grid: rgba(236, 72, 153, 0.1);
+        }
+
+        :root[data-theme="emerald"] {
+            --bg-primary: #061512;
+            --bg-secondary: #0c241f;
+            --bg-card: rgba(16, 44, 38, 0.7);
+            --border-color: rgba(16, 185, 129, 0.18);
+            --text-main: #ecfdf5;
+            --text-muted: #6ee7b7;
+            --accent-primary: #10b981;
+            --accent-secondary: #14b8a6;
+            --accent-gradient: linear-gradient(135deg, #10b981 0%, #34d399 100%);
+            --card-glow: rgba(16, 185, 129, 0.15);
+            --chart-grid: rgba(16, 185, 129, 0.08);
+        }
+
+        :root[data-theme="gold"] {
+            --bg-primary: #14110c;
+            --bg-secondary: #221c13;
+            --bg-card: rgba(41, 34, 23, 0.7);
+            --border-color: rgba(234, 179, 8, 0.18);
+            --text-main: #fefce8;
+            --text-muted: #fde047;
+            --accent-primary: #eab308;
+            --accent-secondary: #f97316;
+            --accent-gradient: linear-gradient(135deg, #eab308 0%, #fb923c 100%);
+            --card-glow: rgba(234, 179, 8, 0.15);
+            --chart-grid: rgba(234, 179, 8, 0.08);
         }
 
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
-            transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+            transition: background-color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
         }
 
         body {
-            font-family: var(--font-family);
+            font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--bg-primary);
             color: var(--text-main);
             min-height: 100vh;
             overflow-x: hidden;
+            background-image: 
+                radial-gradient(circle at 10% 20%, var(--card-glow) 0%, transparent 40%),
+                radial-gradient(circle at 90% 80%, var(--card-glow) 0%, transparent 40%);
         }
 
-        /* --- Animations --- */
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-        }
-
-        @keyframes pulseGlow {
-            0%, 100% { box-shadow: 0 0 15px var(--accent-glow); }
-            50% { box-shadow: 0 0 30px var(--accent-glow); }
-        }
-
-        @keyframes float {
-            0%, 100% { transform: translateY(0px); }
-            50% { transform: translateY(-6px); }
-        }
-
-        .animate-fade-in { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        .animate-float { animation: float 4s ease-in-out infinite; }
-
-        /* --- Header Section --- */
+        /* Top Header */
         header {
-            background: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
-            padding: 1.2rem 2rem;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            padding: 1.25rem 2rem;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-color);
             position: sticky;
             top: 0;
             z-index: 100;
-            backdrop-filter: blur(10px);
+            backdrop-filter: blur(12px);
         }
 
-        .logo-container {
+        .brand {
             display: flex;
             align-items: center;
-            gap: 12px;
-        }
-
-        .logo-icon {
-            width: 42px;
-            height: 42px;
-            background: var(--gradient-1);
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.3rem;
-            color: #fff;
-            box-shadow: 0 4px 15px var(--accent-glow);
-        }
-
-        .logo-text h1 {
-            font-size: 1.3rem;
+            gap: 0.75rem;
+            font-size: 1.35rem;
             font-weight: 800;
-            background: var(--gradient-1);
+            background: var(--accent-gradient);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
         }
 
-        .logo-text p {
-            font-size: 0.75rem;
-            color: var(--text-muted);
+        .brand i {
+            color: var(--accent-primary);
+            -webkit-text-fill-color: initial;
+            animation: pulse 2s infinite;
         }
 
-        .theme-selector-wrapper {
+        /* Theme Selector */
+        .theme-selector {
             display: flex;
             align-items: center;
-            gap: 10px;
-            background: var(--bg-card);
-            padding: 6px 14px;
+            gap: 0.5rem;
+            background: var(--bg-primary);
+            padding: 0.4rem 0.6rem;
             border-radius: 30px;
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-color);
         }
 
-        .theme-selector-wrapper label {
-            font-size: 0.85rem;
-            font-weight: 600;
-            color: var(--text-muted);
-        }
-
-        .theme-select {
-            background: transparent;
-            border: none;
-            color: var(--text-main);
-            font-weight: 700;
-            font-size: 0.85rem;
+        .theme-btn {
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            border: 2px solid transparent;
             cursor: pointer;
-            outline: none;
+            transition: transform 0.2s ease;
         }
 
-        /* --- Layout Grid --- */
+        .theme-btn:hover {
+            transform: scale(1.2);
+        }
+
+        .theme-btn.active {
+            border-color: #fff;
+            box-shadow: 0 0 10px var(--accent-primary);
+        }
+
+        /* Main Container */
         .dashboard-container {
-            max-width: 1440px;
-            margin: 2rem auto;
-            padding: 0 1.5rem;
             display: grid;
             grid-template-columns: 420px 1fr;
-            gap: 2rem;
+            gap: 1.5rem;
+            padding: 2rem;
+            max-width: 1700px;
+            margin: 0 auto;
         }
 
-        @media (max-width: 1024px) {
-            .dashboard-container { grid-template-columns: 1fr; }
+        @media (max-width: 1200px) {
+            .dashboard-container {
+                grid-template-columns: 1fr;
+            }
         }
 
-        /* --- Cards Styling --- */
-        .card {
-            background: var(--gradient-card);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 1.8rem;
-            box-shadow: var(--card-shadow);
-            backdrop-filter: blur(10px);
+        /* Card Container Styling */
+        .glass-card {
+            background: var(--bg-card);
+            backdrop-filter: blur(16px);
+            border: 1px solid var(--border-color);
+            border-radius: 18px;
+            padding: 1.5rem;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             position: relative;
             overflow: hidden;
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-gradient);
+            opacity: 0.7;
         }
 
         .card-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.5rem;
-            border-bottom: 1px solid var(--border);
-            padding-bottom: 0.8rem;
+            margin-bottom: 1.25rem;
         }
 
         .card-title {
@@ -270,583 +255,478 @@ HTML_TEMPLATE = """
             font-weight: 700;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 0.5rem;
+            color: var(--text-main);
         }
 
-        .card-title i {
-            color: var(--accent-primary);
-        }
-
-        /* --- Form Elements --- */
-        .form-grid {
+        /* Form Control Layout */
+        .input-grid {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
             gap: 1rem;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 6px;
+            gap: 0.4rem;
         }
 
-        .form-group.full-width {
-            grid-column: span 2;
-        }
-
-        label {
-            font-size: 0.8rem;
+        .form-group label {
+            font-size: 0.82rem;
             font-weight: 600;
             color: var(--text-muted);
             text-transform: uppercase;
             letter-spacing: 0.5px;
         }
 
-        .input-control {
-            background: var(--bg-input);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 10px 14px;
+        .form-control {
+            background: var(--bg-primary);
+            border: 1px solid var(--border-color);
             color: var(--text-main);
+            padding: 0.65rem 0.85rem;
+            border-radius: 10px;
             font-family: inherit;
             font-size: 0.9rem;
             outline: none;
-            transition: all 0.2s ease;
         }
 
-        .input-control:focus {
+        .form-control:focus {
             border-color: var(--accent-primary);
-            box-shadow: 0 0 10px var(--accent-glow);
+            box-shadow: 0 0 0 3px var(--card-glow);
         }
 
-        .btn-predict {
-            width: 100%;
-            margin-top: 1.5rem;
-            padding: 14px;
-            background: var(--gradient-1);
+        /* Button Styling */
+        .btn-submit {
+            grid-column: 1 / -1;
+            margin-top: 1rem;
+            background: var(--accent-gradient);
+            color: #fff;
             border: none;
+            padding: 0.85rem;
             border-radius: 12px;
-            color: white;
             font-weight: 700;
             font-size: 1rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            box-shadow: 0 4px 20px var(--accent-glow);
-            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            gap: 0.5rem;
+            box-shadow: 0 4px 15px var(--card-glow);
+            transition: all 0.3s ease;
         }
 
-        .btn-predict:hover {
+        .btn-submit:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 25px var(--accent-glow);
+            box-shadow: 0 6px 20px var(--card-glow);
+            filter: brightness(1.1);
         }
 
-        .btn-predict:active {
-            transform: translateY(0);
-        }
-
-        /* --- Right Analytics Area --- */
+        /* Right Panel Graphics */
         .analytics-grid {
             display: grid;
-            grid-template-rows: auto 1fr;
+            grid-template-columns: repeat(12, 1fr);
             gap: 1.5rem;
-        }
-
-        .metrics-row {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 1rem;
         }
 
         .metric-card {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.2rem;
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .metric-icon {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
-            background: rgba(99, 102, 241, 0.1);
-            color: var(--accent-primary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 1.4rem;
-        }
-
-        .metric-data h4 {
-            font-size: 0.75rem;
-            color: var(--text-muted);
-            text-transform: uppercase;
-        }
-
-        .metric-data div {
-            font-size: 1.4rem;
-            font-weight: 800;
-            margin-top: 2px;
-        }
-
-        /* --- Output Dashboard Banner --- */
-        .prediction-result-banner {
-            background: var(--bg-secondary);
-            border-radius: 16px;
-            padding: 1.5rem;
-            border-left: 6px solid var(--accent-primary);
+            grid-column: span 12;
             display: flex;
             align-items: center;
             justify-content: space-between;
-            margin-bottom: 1.5rem;
+            background: var(--bg-secondary);
+            border-radius: 16px;
+            padding: 1.25rem 1.75rem;
+            border: 1px solid var(--border-color);
         }
 
-        .result-title {
+        .metric-info h4 {
             font-size: 0.85rem;
             color: var(--text-muted);
+            margin-bottom: 0.2rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 800;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        .badge-prediction {
+            padding: 0.5rem 1.25rem;
+            border-radius: 30px;
+            font-weight: 700;
+            font-size: 0.9rem;
+            letter-spacing: 0.5px;
             text-transform: uppercase;
         }
 
-        .result-value {
-            font-size: 1.8rem;
-            font-weight: 800;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+        .badge-positive {
+            background: rgba(16, 185, 129, 0.15);
+            color: #10b981;
+            border: 1px solid rgba(16, 185, 129, 0.3);
         }
 
-        .badge {
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8rem;
-            font-weight: 700;
+        .badge-negative {
+            background: rgba(239, 68, 68, 0.15);
+            color: #ef4444;
+            border: 1px solid rgba(239, 68, 68, 0.3);
         }
 
-        .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--success); border: 1px solid var(--success); }
-        .badge-danger { background: rgba(239, 68, 68, 0.2); color: var(--danger); border: 1px solid var(--danger); }
-
-        /* --- Charts Grid --- */
-        .charts-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 1.5rem;
+        .chart-card-lg {
+            grid-column: span 7;
+            height: 380px;
         }
 
-        @media (max-width: 768px) {
-            .charts-container { grid-template-columns: 1fr; }
+        .chart-card-sm {
+            grid-column: span 5;
+            height: 380px;
         }
 
-        .chart-box {
-            background: var(--bg-secondary);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 1.2rem;
-            position: relative;
-            height: 300px;
+        @media (max-width: 992px) {
+            .chart-card-lg, .chart-card-sm {
+                grid-column: span 12;
+            }
         }
 
-        /* Loading Overlay */
-        .loading-overlay {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(10, 14, 23, 0.8);
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            z-index: 10;
-            border-radius: 20px;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
+        /* Animations */
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.08); }
+            100% { transform: scale(1); }
         }
 
-        .loading-overlay.active {
-            opacity: 1;
-            pointer-events: all;
+        .fade-in {
+            animation: fadeIn 0.5s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .spinner {
-            width: 40px;
-            height: 40px;
-            border: 4px solid var(--border);
-            border-top-color: var(--accent-primary);
-            border-radius: 50%;
-            animation: spin 1s linear infinite;
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- Top Navigation Header -->
     <header>
-        <div class="logo-container">
-            <div class="logo-icon animate-float">
-                <i class="fa-solid fa-brain"></i>
-            </div>
-            <div class="logo-text">
-                <h1>AdaBoost Intelligence Dashboard</h1>
-                <p>Real-time Ensemble ML Analytics Framework</p>
-            </div>
+        <div class="brand">
+            <i class="fa-solid fa-chart-line"></i>
+            <span>AdaBoost AI Analytics</span>
         </div>
 
-        <!-- Color Theme Switcher -->
-        <div class="theme-selector-wrapper">
-            <i class="fa-solid fa-palette" style="color: var(--accent-primary);"></i>
-            <label for="themeSelect">Theme:</label>
-            <select id="themeSelect" class="theme-select" onchange="changeTheme(this.value)">
-                <option value="dark">Cyber Dark</option>
-                <option value="neon">Electric Neon</option>
-                <option value="sunset">Sunset Glow</option>
-                <option value="emerald">Emerald Forest</option>
-            </select>
+        <div class="theme-selector">
+            <div class="theme-btn active" style="background: #6366f1;" onclick="setTheme('dark', this)" title="Dark Mode"></div>
+            <div class="theme-btn" style="background: #0284c7;" onclick="setTheme('ocean', this)" title="Ocean Cyan"></div>
+            <div class="theme-btn" style="background: #f43f5e;" onclick="setTheme('sunset', this)" title="Sunset Glow"></div>
+            <div class="theme-btn" style="background: #ec4899;" onclick="setTheme('cyber', this)" title="Cyberpunk"></div>
+            <div class="theme-btn" style="background: #10b981;" onclick="setTheme('emerald', this)" title="Emerald Forest"></div>
+            <div class="theme-btn" style="background: #eab308;" onclick="setTheme('gold', this)" title="Luxury Gold"></div>
         </div>
     </header>
 
-    <!-- Main Dashboard Container -->
     <div class="dashboard-container">
-        
-        <!-- Input Form Side -->
-        <div class="card animate-fade-in">
-            <div class="loading-overlay" id="loadingOverlay">
-                <div class="spinner"></div>
-                <p style="margin-top: 10px; font-weight: 600;">Processing Ensemble Model...</p>
-            </div>
-
+        <!-- Input Form Section -->
+        <div class="glass-card">
             <div class="card-header">
                 <div class="card-title">
-                    <i class="fa-solid fa-sliders"></i> Input Parameters
+                    <i class="fa-solid fa-sliders" style="color: var(--accent-primary);"></i>
+                    Model Parameters
                 </div>
-                <span style="font-size: 0.75rem; color: var(--text-muted);">10 Active Features</span>
             </div>
 
-            <form id="predictionForm">
-                <div class="form-grid">
-                    
+            <form id="prediction-form" onsubmit="handlePredict(event)">
+                <div class="input-grid">
                     <div class="form-group">
                         <label>Age</label>
-                        <input type="number" name="Age" class="input-control" value="35" required min="18" max="100">
+                        <input type="number" class="form-control" name="Age" value="34" required>
                     </div>
 
                     <div class="form-group">
                         <label>Gender</label>
-                        <select name="Gender" class="input-control">
-                            <option value="Male">Male</option>
-                            <option value="Female">Female</option>
+                        <select class="form-control" name="Gender">
+                            <option value="0">Female (0)</option>
+                            <option value="1">Male (1)</option>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label>Tenure (Months)</label>
-                        <input type="number" name="Tenure" class="input-control" value="12" required min="0">
+                        <input type="number" class="form-control" name="Tenure" value="12" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Usage Freq (Days/Mo)</label>
-                        <input type="number" name="Usage Frequency" class="input-control" value="18" required min="0" max="30">
+                        <label>Usage Frequency</label>
+                        <input type="number" class="form-control" name="Usage Frequency" value="18" required>
                     </div>
 
                     <div class="form-group">
                         <label>Support Calls</label>
-                        <input type="number" name="Support Calls" class="input-control" value="2" required min="0">
+                        <input type="number" class="form-control" name="Support Calls" value="2" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Payment Delay (Days)</label>
-                        <input type="number" name="Payment Delay" class="input-control" value="1" required min="0">
+                        <label>Payment Delay</label>
+                        <input type="number" class="form-control" name="Payment Delay" value="1" required>
                     </div>
 
                     <div class="form-group">
-                        <label>Subscription</label>
-                        <select name="Subscription Type" class="input-control">
-                            <option value="Basic">Basic</option>
-                            <option value="Standard" selected>Standard</option>
-                            <option value="Premium">Premium</option>
+                        <label>Subscription Type</label>
+                        <select class="form-control" name="Subscription Type">
+                            <option value="0">Basic (0)</option>
+                            <option value="1">Standard (1)</option>
+                            <option value="2">Premium (2)</option>
                         </select>
                     </div>
 
                     <div class="form-group">
-                        <label>Contract</label>
-                        <select name="Contract Length" class="input-control">
-                            <option value="Monthly">Monthly</option>
-                            <option value="Quarterly" selected>Quarterly</option>
-                            <option value="Annual">Annual</option>
+                        <label>Contract Length</label>
+                        <select class="form-control" name="Contract Length">
+                            <option value="0">Monthly (0)</option>
+                            <option value="1">Quarterly (1)</option>
+                            <option value="2">Annual (2)</option>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label>Total Spend ($)</label>
-                        <input type="number" step="0.01" name="Total Spend" class="input-control" value="450.00" required min="0">
+                        <input type="number" step="0.01" class="form-control" name="Total Spend" value="450.50" required>
                     </div>
 
                     <div class="form-group">
                         <label>Last Interaction</label>
-                        <input type="number" name="Last Interaction" class="input-control" value="5" required min="0">
+                        <input type="number" class="form-control" name="Last Interaction" value="5" required>
                     </div>
 
+                    <button type="submit" class="btn-submit">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> Run Prediction Analysis
+                    </button>
                 </div>
-
-                <button type="submit" class="btn-predict">
-                    <i class="fa-solid fa-bolt"></i> Run Predictive Inference
-                </button>
             </form>
         </div>
 
-        <!-- Right Analytics Output Side -->
-        <div class="analytics-grid animate-fade-in" style="animation-delay: 0.15s;">
-            
-            <!-- Result Overview Banner -->
-            <div class="card" style="padding: 1.2rem 1.8rem;">
-                <div class="prediction-result-banner">
-                    <div>
-                        <div class="result-title">Model Classification Output</div>
-                        <div class="result-value" id="resultLabel">
-                            -- <span class="badge badge-success" id="resultBadge">Awaiting Data</span>
-                        </div>
-                    </div>
-                    <div style="text-align: right;">
-                        <div class="result-title">Confidence Probability</div>
-                        <div class="result-value" id="confidenceValue" style="color: var(--accent-primary);">--%</div>
-                    </div>
+        <!-- Dashboard Outputs -->
+        <div class="analytics-grid fade-in">
+            <!-- Output Metrics -->
+            <div class="metric-card span-12">
+                <div class="metric-info">
+                    <h4>CLASSIFICATION RESULT</h4>
+                    <div id="prediction-text" class="metric-value">Waiting...</div>
                 </div>
-
-                <!-- KPI Metric Row -->
-                <div class="metrics-row">
-                    <div class="metric-card">
-                        <div class="metric-icon"><i class="fa-solid fa-microchip"></i></div>
-                        <div class="metric-data">
-                            <h4>Model Type</h4>
-                            <div>AdaBoost</div>
-                        </div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div class="metric-icon"><i class="fa-solid fa-layer-group"></i></div>
-                        <div class="metric-data">
-                            <h4>Estimators</h4>
-                            <div id="estimatorsCount">50 Trees</div>
-                        </div>
-                    </div>
-
-                    <div class="metric-card">
-                        <div class="metric-icon"><i class="fa-solid fa-gauge-high"></i></div>
-                        <div class="metric-data">
-                            <h4>Status</h4>
-                            <div style="color: var(--success); font-size: 1.1rem; font-weight:700;">Active</div>
-                        </div>
-                    </div>
+                <div id="status-badge" class="badge-prediction badge-positive">Ready</div>
+                <div class="metric-info" style="text-align: right;">
+                    <h4>CONFIDENCE SCORE</h4>
+                    <div id="confidence-score" class="metric-value" style="color: var(--accent-primary);">0.0%</div>
                 </div>
             </div>
 
-            <!-- Visual Charts -->
-            <div class="charts-container">
-                <div class="chart-box">
-                    <h4 style="margin-bottom: 10px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">
-                        <i class="fa-solid fa-chart-pie"></i> Probability Breakdown
-                    </h4>
-                    <canvas id="probabilityChart"></canvas>
+            <!-- Radar / Multi Feature View Chart -->
+            <div class="glass-card chart-card-lg">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fa-solid fa-chart-radar" style="color: var(--accent-primary);"></i>
+                        Feature Input Distribution
+                    </div>
                 </div>
-
-                <div class="chart-box">
-                    <h4 style="margin-bottom: 10px; font-size: 0.85rem; color: var(--text-muted); text-transform: uppercase;">
-                        <i class="fa-solid fa-chart-bar"></i> Feature Profile
-                    </h4>
-                    <canvas id="featureChart"></canvas>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="radarChart"></canvas>
                 </div>
             </div>
 
+            <!-- Probability Doughnut Chart -->
+            <div class="glass-card chart-card-sm">
+                <div class="card-header">
+                    <div class="card-title">
+                        <i class="fa-solid fa-chart-pie" style="color: var(--accent-primary);"></i>
+                        Probability Breakdown
+                    </div>
+                </div>
+                <div style="height: 300px; position: relative;">
+                    <canvas id="pieChart"></canvas>
+                </div>
+            </div>
         </div>
-
     </div>
 
     <script>
-        let probChart = null;
-        let featChart = null;
+        let radarChartInst = null;
+        let pieChartInst = null;
 
-        // Dynamic Theme Switcher
-        function changeTheme(themeName) {
+        function setTheme(themeName, element) {
             document.documentElement.setAttribute('data-theme', themeName);
-            updateChartColors();
+            document.querySelectorAll('.theme-btn').forEach(btn => btn.classList.remove('active'));
+            element.classList.add('active');
+            updateChartTheme();
         }
 
-        // Color helper for Charts
-        function getComputedThemeColor(variable) {
-            return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+        function getAccentColor() {
+            return getComputedStyle(document.documentElement).getPropertyValue('--accent-primary').trim();
         }
 
-        // Initialize Empty Charts
+        function getSecondaryColor() {
+            return getComputedStyle(document.documentElement).getPropertyValue('--accent-secondary').trim();
+        }
+
+        function getGridColor() {
+            return getComputedStyle(document.documentElement).getPropertyValue('--chart-grid').trim();
+        }
+
         function initCharts() {
-            const ctx1 = document.getElementById('probabilityChart').getContext('2d');
-            const ctx2 = document.getElementById('featureChart').getContext('2d');
+            const ctxRadar = document.getElementById('radarChart').getContext('2d');
+            const ctxPie = document.getElementById('pieChart').getContext('2d');
 
-            probChart = new Chart(ctx1, {
-                type: 'doughnut',
+            radarChartInst = new Chart(ctxRadar, {
+                type: 'radar',
                 data: {
-                    labels: ['Class 0 (Active)', 'Class 1 (Churn)'],
+                    labels: ['Age', 'Tenure', 'Usage Freq', 'Support Calls', 'Payment Delay', 'Last Interaction'],
                     datasets: [{
-                        data: [50, 50],
-                        backgroundColor: [getComputedThemeColor('--success'), getComputedThemeColor('--accent-secondary')],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom', labels: { color: getComputedThemeColor('--text-main') } } }
-                }
-            });
-
-            featChart = new Chart(ctx2, {
-                type: 'bar',
-                data: {
-                    labels: ['Tenure', 'Usage', 'Calls', 'Delay', 'Spend'],
-                    datasets: [{
-                        label: 'Input Value Overview',
-                        data: [12, 18, 2, 1, 450],
-                        backgroundColor: getComputedThemeColor('--accent-primary'),
-                        borderRadius: 6
+                        label: 'Normalized Values',
+                        data: [34, 12, 18, 2, 1, 5],
+                        backgroundColor: 'rgba(99, 102, 241, 0.25)',
+                        borderColor: getAccentColor(),
+                        borderWidth: 2,
+                        pointBackgroundColor: getAccentColor()
                     }]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     scales: {
-                        x: { ticks: { color: getComputedThemeColor('--text-muted') }, grid: { display: false } },
-                        y: { ticks: { color: getComputedThemeColor('--text-muted') }, grid: { color: getComputedThemeColor('--border') } }
+                        r: {
+                            grid: { color: getGridColor() },
+                            angleLines: { color: getGridColor() },
+                            pointLabels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans', size: 11 } },
+                            ticks: { display: false }
+                        }
                     },
                     plugins: { legend: { display: false } }
                 }
             });
+
+            pieChartInst = new Chart(ctxPie, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Class 0', 'Class 1'],
+                    datasets: [{
+                        data: [50, 50],
+                        backgroundColor: [getAccentColor(), getSecondaryColor()],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: { color: '#94a3b8', font: { family: 'Plus Jakarta Sans' } }
+                        }
+                    }
+                }
+            });
         }
 
-        function updateChartColors() {
-            if(!probChart || !featChart) return;
-            
-            probChart.data.datasets[0].backgroundColor = [
-                getComputedThemeColor('--success'), 
-                getComputedThemeColor('--accent-secondary')
-            ];
-            probChart.options.plugins.legend.labels.color = getComputedThemeColor('--text-main');
-            probChart.update();
+        function updateChartTheme() {
+            if (!radarChartInst || !pieChartInst) return;
 
-            featChart.data.datasets[0].backgroundColor = getComputedThemeColor('--accent-primary');
-            featChart.options.scales.x.ticks.color = getComputedThemeColor('--text-muted');
-            featChart.options.scales.y.ticks.color = getComputedThemeColor('--text-muted');
-            featChart.options.scales.y.grid.color = getComputedThemeColor('--border');
-            featChart.update();
+            radarChartInst.data.datasets[0].borderColor = getAccentColor();
+            radarChartInst.data.datasets[0].pointBackgroundColor = getAccentColor();
+            radarChartInst.options.scales.r.grid.color = getGridColor();
+            radarChartInst.options.scales.r.angleLines.color = getGridColor();
+            radarChartInst.update();
+
+            pieChartInst.data.datasets[0].backgroundColor = [getAccentColor(), getSecondaryColor()];
+            pieChartInst.update();
         }
 
-        // Handle AJAX Prediction Request
-        document.getElementById('predictionForm').addEventListener('submit', async function(e) {
+        async function handlePredict(e) {
             e.preventDefault();
-            
-            const overlay = document.getElementById('loadingOverlay');
-            overlay.classList.add('active');
-
-            const formData = new FormData(this);
+            const formData = new FormData(e.target);
+            const data = {};
+            formData.forEach((val, key) => data[key] = parseFloat(val));
 
             try {
                 const response = await fetch('/predict', {
                     method: 'POST',
-                    body: formData
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
                 });
-
-                const data = await response.json();
-
-                if(data.status === 'success') {
-                    // Update Text Values
-                    document.getElementById('resultLabel').innerHTML = `
-                        Class ${data.prediction}
-                        <span class="badge ${data.prediction === 1 ? 'badge-danger' : 'badge-success'}">
-                            ${data.prediction === 1 ? 'High Risk' : 'Low Risk / Active'}
-                        </span>
-                    `;
-                    document.getElementById('confidenceValue').innerText = (data.probabilities[data.prediction] * 100).toFixed(1) + '%';
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('prediction-text').innerText = `Class ${result.prediction}`;
+                    document.getElementById('confidence-score').innerText = `${(result.max_probability * 100).toFixed(1)}%`;
                     
-                    if (data.n_estimators) {
-                        document.getElementById('estimatorsCount').innerText = `${data.n_estimators} Trees`;
-                    }
+                    const badge = document.getElementById('status-badge');
+                    badge.innerText = `Prediction: Class ${result.prediction}`;
+                    badge.className = result.prediction === 1 ? 'badge-prediction badge-negative' : 'badge-prediction badge-positive';
 
                     // Update Charts
-                    probChart.data.datasets[0].data = data.probabilities;
-                    probChart.update();
+                    pieChartInst.data.datasets[0].data = result.probabilities;
+                    pieChartInst.update();
 
-                    featChart.data.labels = ['Tenure', 'Usage Freq', 'Calls', 'Delay', 'Last Inter.'];
-                    featChart.data.datasets[0].data = [
-                        formData.get('Tenure'),
-                        formData.get('Usage Frequency'),
-                        formData.get('Support Calls'),
-                        formData.get('Payment Delay'),
-                        formData.get('Last Interaction')
+                    radarChartInst.data.datasets[0].data = [
+                        data['Age'], 
+                        data['Tenure'], 
+                        data['Usage Frequency'], 
+                        data['Support Calls'], 
+                        data['Payment Delay'], 
+                        data['Last Interaction']
                     ];
-                    featChart.update();
+                    radarChartInst.update();
                 } else {
-                    alert('Prediction Error: ' + data.message);
+                    alert('Prediction Error: ' + result.error);
                 }
             } catch (err) {
-                alert('Request Failed: ' + err.message);
-            } finally {
-                setTimeout(() => overlay.classList.remove('active'), 400);
+                console.error(err);
+                alert('Error submitting model request.');
             }
-        });
+        }
 
-        window.onload = initCharts;
+        window.addEventListener('DOMContentLoaded', initCharts);
     </script>
 </body>
 </html>
 """
 
-@app.route("/")
+@app.route('/')
 def index():
     return render_template_string(HTML_TEMPLATE)
 
-@app.route("/predict", methods=["POST"])
+@app.route('/predict', methods=['POST'])
 def predict():
     if model is None:
-        return jsonify({"status": "error", "message": "Model file missing or failed to load."})
+        return jsonify({'success': False, 'error': 'AdaBoost pickle model is not loaded correctly.'})
 
     try:
-        # Extract features according to expected ordering
-        input_data = []
-        for feature in FEATURE_NAMES:
-            val = request.form.get(feature)
-            
-            # Categorical Encoding lookup
-            if feature in CATEGORICAL_MAPS:
-                val = CATEGORICAL_MAPS[feature].get(val, 0)
-            else:
-                val = float(val) if val else 0.0
-                
-            input_data.append(val)
-
-        # Prepare 2D array for prediction
-        features_array = np.array([input_data])
+        data = request.get_json()
         
-        # Inference execution
-        prediction = int(model.predict(features_array)[0])
-        
-        probabilities = [0.5, 0.5]
-        if hasattr(model, "predict_proba"):
-            probabilities = model.predict_proba(features_array)[0].tolist()
+        # Build array based on model requirements
+        input_data = np.array([[
+            data.get('Age', 0),
+            data.get('Gender', 0),
+            data.get('Tenure', 0),
+            data.get('Usage Frequency', 0),
+            data.get('Support Calls', 0),
+            data.get('Payment Delay', 0),
+            data.get('Subscription Type', 0),
+            data.get('Contract Length', 0),
+            data.get('Total Spend', 0.0),
+            data.get('Last Interaction', 0)
+        ]])
 
-        n_estimators = getattr(model, "n_estimators", 50)
+        prediction = int(model.predict(input_data)[0])
+        probabilities = model.predict_proba(input_data)[0].tolist()
 
         return jsonify({
-            "status": "success",
-            "prediction": prediction,
-            "probabilities": probabilities,
-            "n_estimators": n_estimators
+            'success': True,
+            'prediction': prediction,
+            'probabilities': probabilities,
+            'max_probability': max(probabilities)
         })
-
     except Exception as e:
-        return jsonify({"status": "error", "message": str(e)})
+        return jsonify({'success': False, 'error': str(e)})
 
-if __name__ == "__main__":
-    app.run(debug=True, host="0.0.0.0", port=5000)
+if __name__ == '__main__':
+    app.run(debug=True, host='0.0.0.0', port=5000)
