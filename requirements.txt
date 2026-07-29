@@ -1,5 +1,5 @@
 Flask
 scikit-learn
 numpy
-joblib
+scipy
 gunicorn
