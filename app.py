@@ -27,7 +27,7 @@ HTML_TEMPLATE = """
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Analytics & Churn Prediction Dashboard</title>
+    <title>AI Customer Churn Prediction & Analytics</title>
     
     <!-- Google Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -131,7 +131,7 @@ HTML_TEMPLATE = """
             align-items: center;
             gap: 12px;
             font-family: 'Space Grotesk', sans-serif;
-            font-size: 1.35rem;
+            font-size: 1.4rem;
             font-weight: 700;
             background: var(--gradient-main);
             -webkit-background-clip: text;
@@ -203,7 +203,7 @@ HTML_TEMPLATE = """
             margin: 2rem auto;
             padding: 0 1.5rem;
             display: grid;
-            grid-template-columns: 1fr 1.1fr;
+            grid-template-columns: 1fr 1.2fr;
             gap: 2rem;
         }
 
@@ -272,16 +272,6 @@ HTML_TEMPLATE = """
             gap: 6px;
         }
 
-        .form-group.full-width {
-            grid-column: span 2;
-        }
-
-        @media (max-width: 640px) {
-            .form-group.full-width {
-                grid-column: span 1;
-            }
-        }
-
         label {
             font-size: 0.825rem;
             font-weight: 600;
@@ -332,10 +322,6 @@ HTML_TEMPLATE = """
             box-shadow: 0 6px 24px rgba(236, 72, 153, 0.5);
         }
 
-        .btn-submit:active {
-            transform: translateY(0);
-        }
-
         /* Dashboard Analysis Side */
         .dashboard-container {
             display: flex;
@@ -356,8 +342,6 @@ HTML_TEMPLATE = """
             border-radius: var(--radius-md);
             padding: 1rem;
             text-align: center;
-            position: relative;
-            overflow: hidden;
         }
 
         .metric-card .value {
@@ -414,18 +398,18 @@ HTML_TEMPLATE = """
             border-radius: 20px;
             font-size: 0.85rem;
             font-weight: 700;
-            margin-top: 4px;
         }
 
         .badge-danger { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); border: 1px solid var(--accent-rose); }
         .badge-success { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); border: 1px solid var(--accent-emerald); }
 
-        /* Chart Visualization Box */
+        /* Chart Boxes */
         .chart-box {
             background: rgba(0, 0, 0, 0.2);
             border-radius: var(--radius-md);
             padding: 1.25rem;
             border: 1px solid var(--border-color);
+            margin-top: 1rem;
         }
 
         .chart-header {
@@ -441,8 +425,7 @@ HTML_TEMPLATE = """
         .bar-chart {
             display: flex;
             flex-direction: column;
-            gap: 12px;
-            margin-top: 10px;
+            gap: 10px;
         }
 
         .bar-item {
@@ -465,7 +448,6 @@ HTML_TEMPLATE = """
             background: rgba(255, 255, 255, 0.08);
             border-radius: 5px;
             overflow: hidden;
-            position: relative;
         }
 
         .bar-fill {
@@ -482,11 +464,12 @@ HTML_TEMPLATE = """
             font-family: 'Space Grotesk', sans-serif;
         }
 
-        /* Key Performance Indicators */
-        .kpi-row {
+        /* Analytics KPI Cards */
+        .kpi-grid {
             display: grid;
             grid-template-columns: repeat(2, 1fr);
             gap: 1rem;
+            margin-top: 1rem;
         }
 
         .kpi-card {
@@ -532,8 +515,8 @@ HTML_TEMPLATE = """
     <!-- Navigation Header -->
     <nav class="navbar">
         <div class="brand">
-            <i class="fa-solid fa-chart-line"></i>
-            <span>AdaBoost Analytics AI</span>
+            <i class="fa-solid fa-users-gear"></i>
+            <span>AI Customer Churn Prediction</span>
         </div>
         <div class="controls-group">
             <!-- Dynamic Theme Selector -->
@@ -557,9 +540,9 @@ HTML_TEMPLATE = """
         <div class="card">
             <div class="card-header">
                 <div class="card-title">
-                    <i class="fa-solid fa-sliders"></i> Input Model Features
+                    <i class="fa-solid fa-sliders"></i> Customer Parameters
                 </div>
-                <span style="font-size: 0.75rem; color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1); padding: 4px 8px; border-radius: 6px;">10 Parameters</span>
+                <span style="font-size: 0.75rem; color: var(--accent-cyan); background: rgba(6, 182, 212, 0.1); padding: 4px 8px; border-radius: 6px;">10 Inputs</span>
             </div>
 
             <form id="predictionForm">
@@ -567,7 +550,7 @@ HTML_TEMPLATE = """
                     
                     <div class="form-group">
                         <label>Age</label>
-                        <input type="number" id="Age" name="Age" value="35" min="18" max="100" required>
+                        <input type="number" id="Age" name="Age" value="38" min="18" max="100" required>
                     </div>
 
                     <div class="form-group">
@@ -580,22 +563,22 @@ HTML_TEMPLATE = """
 
                     <div class="form-group">
                         <label>Tenure (Months)</label>
-                        <input type="number" id="Tenure" name="Tenure" value="24" min="0" max="120" required>
+                        <input type="number" id="Tenure" name="Tenure" value="18" min="0" max="120" required>
                     </div>
 
                     <div class="form-group">
                         <label>Usage Frequency</label>
-                        <input type="number" id="Usage Frequency" name="Usage Frequency" value="15" min="1" max="100" required>
+                        <input type="number" id="Usage Frequency" name="Usage Frequency" value="8" min="1" max="100" required>
                     </div>
 
                     <div class="form-group">
                         <label>Support Calls</label>
-                        <input type="number" id="Support Calls" name="Support Calls" value="2" min="0" max="20" required>
+                        <input type="number" id="Support Calls" name="Support Calls" value="4" min="0" max="20" required>
                     </div>
 
                     <div class="form-group">
                         <label>Payment Delay (Days)</label>
-                        <input type="number" id="Payment Delay" name="Payment Delay" value="5" min="0" max="60" required>
+                        <input type="number" id="Payment Delay" name="Payment Delay" value="12" min="0" max="60" required>
                     </div>
 
                     <div class="form-group">
@@ -610,95 +593,110 @@ HTML_TEMPLATE = """
                     <div class="form-group">
                         <label>Contract Length</label>
                         <select id="Contract Length" name="Contract Length">
-                            <option value="Annual">Annual</option>
                             <option value="Monthly">Monthly</option>
                             <option value="Quarterly">Quarterly</option>
+                            <option value="Annual">Annual</option>
                         </select>
                     </div>
 
                     <div class="form-group">
                         <label>Total Spend ($)</label>
-                        <input type="number" step="0.01" id="Total Spend" name="Total Spend" value="550.00" min="0" required>
+                        <input type="number" step="0.01" id="Total Spend" name="Total Spend" value="320.00" min="0" required>
                     </div>
 
                     <div class="form-group">
                         <label>Last Interaction (Days)</label>
-                        <input type="number" id="Last Interaction" name="Last Interaction" value="12" min="0" max="365" required>
+                        <input type="number" id="Last Interaction" name="Last Interaction" value="22" min="0" max="365" required>
                     </div>
 
                     <button type="submit" class="btn-submit">
-                        <span id="btnText">Run Prediction Model</span>
+                        <span id="btnText">Analyze Churn Probability</span>
                         <div class="spinner" id="btnSpinner"></div>
-                        <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        <i class="fa-solid fa-chart-line"></i>
                     </button>
 
                 </div>
             </form>
         </div>
 
-        <!-- Professional Chart & Analysis Output -->
+        <!-- Analytics Dashboard Side -->
         <div class="dashboard-container">
             
             <!-- Result Overview Banner -->
             <div class="card result-banner">
-                <div class="result-title">Model Classification Output</div>
-                <div class="result-value" id="resultLabel">Awaiting Input...</div>
+                <div class="result-title">AI Customer Churn Status</div>
+                <div class="result-value" id="resultLabel">Ready for Analysis</div>
                 <div id="statusBadge" class="status-badge badge-success" style="display:none;">
-                    <i class="fa-solid fa-circle-check"></i> <span id="badgeText">Low Risk</span>
+                    <i class="fa-solid fa-shield-halved"></i> <span id="badgeText">Low Risk</span>
                 </div>
             </div>
 
-            <!-- Dashboard Analytics Grid -->
+            <!-- Analytics Dashboard Box -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">
-                        <i class="fa-solid fa-chart-simple"></i> Analytics & Feature Impact Analysis
+                        <i class="fa-solid fa-chart-pie"></i> Analytics Dashboard
                     </div>
+                    <span style="font-size: 0.75rem; color: var(--accent-emerald); background: rgba(16, 185, 129, 0.1); padding: 4px 8px; border-radius: 6px;">Live Metrics</span>
                 </div>
 
-                <div class="metrics-grid" style="margin-bottom: 1.25rem;">
+                <!-- Top Metric Cards -->
+                <div class="metrics-grid">
                     <div class="metric-card">
                         <div class="label">Confidence</div>
                         <div class="value" style="color: var(--accent-emerald);" id="metricConfidence">--%</div>
                     </div>
                     <div class="metric-card">
-                        <div class="label">Risk Index</div>
+                        <div class="label">Churn Risk Index</div>
                         <div class="value" style="color: var(--accent-rose);" id="metricRisk">--</div>
                     </div>
                     <div class="metric-card">
-                        <div class="label">Model Class</div>
-                        <div class="value" style="color: var(--accent-cyan);" id="metricClass">AdaBoost</div>
+                        <div class="label">Customer Value</div>
+                        <div class="value" style="color: var(--accent-cyan);" id="metricLTV">$0.00</div>
+                    </div>
+                </div>
+
+                <!-- KPI Analytics Summary Grid -->
+                <div class="kpi-grid">
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fa-solid fa-headset"></i></div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Support Burden</div>
+                            <div style="font-size: 1.1rem; font-weight:700;" id="kpiSupport">Normal</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fa-solid fa-credit-card"></i></div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Payment Reliability</div>
+                            <div style="font-size: 1.1rem; font-weight:700;" id="kpiPayment">Good</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fa-solid fa-user-clock"></i></div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Engagement Status</div>
+                            <div style="font-size: 1.1rem; font-weight:700;" id="kpiEngagement">Active</div>
+                        </div>
+                    </div>
+                    <div class="kpi-card">
+                        <div class="kpi-icon"><i class="fa-solid fa-file-contract"></i></div>
+                        <div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Retention Health</div>
+                            <div style="font-size: 1.1rem; font-weight:700;" id="kpiHealth">Stable</div>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Feature Impact Bar Chart Visualizer -->
                 <div class="chart-box">
                     <div class="chart-header">
-                        <span>Relative Feature Distribution</span>
+                        <span>Feature Relative Distribution</span>
                         <i class="fa-solid fa-chart-column" style="color: var(--accent-secondary);"></i>
                     </div>
                     <div class="bar-chart" id="chartContainer">
-                        <!-- Bars dynamically rendered by JS -->
                         <div style="text-align: center; color: var(--text-secondary); padding: 1rem 0;">
-                            Submit parameters to calculate feature weights.
-                        </div>
-                    </div>
-                </div>
-
-                <!-- KPI Cards Breakdown -->
-                <div class="kpi-row" style="margin-top: 1.25rem;">
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fa-solid fa-clock-rotate-left"></i></div>
-                        <div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Recency Score</div>
-                            <div style="font-size: 1.1rem; font-weight:700;" id="kpiRecency">Good</div>
-                        </div>
-                    </div>
-                    <div class="kpi-card">
-                        <div class="kpi-icon"><i class="fa-solid fa-handshake"></i></div>
-                        <div>
-                            <div style="font-size: 0.75rem; color: var(--text-secondary);">Engagement Rate</div>
-                            <div style="font-size: 1.1rem; font-weight:700;" id="kpiEngagement">Medium</div>
+                            Submit parameters to generate analytics breakdown.
                         </div>
                     </div>
                 </div>
@@ -733,7 +731,7 @@ HTML_TEMPLATE = """
             }
         }
 
-        // AJAX Form Submission Handlers
+        // Form Submit Handler
         document.getElementById('predictionForm').addEventListener('submit', async function(e) {
             e.preventDefault();
             
@@ -753,22 +751,22 @@ HTML_TEMPLATE = """
                 const data = await response.json();
                 
                 if(data.status === 'success') {
-                    renderResults(data);
+                    renderDashboard(data);
                 } else {
                     alert('Error: ' + data.message);
                 }
             } catch (err) {
                 console.error(err);
-                alert('Prediction submission failed!');
+                alert('Prediction request failed!');
             } finally {
                 btnText.style.display = 'inline';
                 btnSpinner.style.display = 'none';
             }
         });
 
-        // Function to Render Results Dynamically
-        function renderResults(data) {
-            // Update Banner
+        // Function to Render Dashboard Analytics Dynamically
+        function renderDashboard(data) {
+            // Update Main Banner
             const labelEl = document.getElementById('resultLabel');
             const badgeEl = document.getElementById('statusBadge');
             const badgeText = document.getElementById('badgeText');
@@ -778,22 +776,28 @@ HTML_TEMPLATE = """
 
             if(data.prediction === 1) {
                 badgeEl.className = 'status-badge badge-danger';
-                badgeText.textContent = 'High Churn Risk';
+                badgeText.textContent = 'High Attrition Risk';
             } else {
                 badgeEl.className = 'status-badge badge-success';
-                badgeText.textContent = 'Low Churn Risk';
+                badgeText.textContent = 'Retained Customer';
             }
 
-            // Update Metrics
+            // Update Top Metrics
             document.getElementById('metricConfidence').textContent = data.confidence + '%';
             document.getElementById('metricRisk').textContent = data.risk_score + '/100';
-
-            // KPI Indicators
-            const lastInteraction = parseFloat(document.getElementById('Last Interaction').value);
-            const usage = parseFloat(document.getElementById('Usage Frequency').value);
             
-            document.getElementById('kpiRecency').textContent = lastInteraction > 20 ? 'Low' : 'Optimal';
-            document.getElementById('kpiEngagement').textContent = usage > 10 ? 'High' : 'Moderate';
+            const spend = parseFloat(document.getElementById('Total Spend').value);
+            document.getElementById('metricLTV').textContent = '$' + spend.toFixed(2);
+
+            // Dynamic KPI Logic Calculation
+            const supportCalls = parseFloat(document.getElementById('Support Calls').value);
+            const paymentDelay = parseFloat(document.getElementById('Payment Delay').value);
+            const lastInteraction = parseFloat(document.getElementById('Last Interaction').value);
+
+            document.getElementById('kpiSupport').textContent = supportCalls > 3 ? 'High Risk' : 'Normal';
+            document.getElementById('kpiPayment').textContent = paymentDelay > 10 ? 'Delayed' : 'Reliable';
+            document.getElementById('kpiEngagement').textContent = lastInteraction > 20 ? 'Dormant' : 'Active';
+            document.getElementById('kpiHealth').textContent = data.risk_score > 50 ? 'Critical' : 'Stable';
 
             // Render Dynamic Bar Chart
             const chartBox = document.getElementById('chartContainer');
@@ -803,7 +807,7 @@ HTML_TEMPLATE = """
             const maxVal = Math.max(...Object.values(features));
 
             for (const [key, val] of Object.entries(features)) {
-                const pct = ((val / maxVal) * 100).toFixed(0);
+                const pct = maxVal > 0 ? ((val / maxVal) * 100).toFixed(0) : 0;
                 const barItem = document.createElement('div');
                 barItem.className = 'bar-item';
                 barItem.innerHTML = `
@@ -815,7 +819,7 @@ HTML_TEMPLATE = """
                 `;
                 chartBox.appendChild(barItem);
 
-                // Animate bars on update
+                // Bar fill animation
                 setTimeout(() => {
                     barItem.querySelector('.bar-fill').style.width = pct + '%';
                 }, 100);
@@ -835,7 +839,7 @@ def predict():
     if model is None:
         return jsonify({
             'status': 'error',
-            'message': 'Model pickled file is missing or failed to load on the server.'
+            'message': 'Model file (Adaboost_model.pkl) is missing or failed to load.'
         })
 
     try:
@@ -857,10 +861,10 @@ def predict():
         sub_map = {'Basic': 0, 'Standard': 1, 'Premium': 2}
         subscription_type = sub_map.get(sub_type_str, 0)
 
-        contract_map = {'Annual': 0, 'Monthly': 1, 'Quarterly': 2}
+        contract_map = {'Monthly': 0, 'Quarterly': 1, 'Annual': 2}
         contract_length = contract_map.get(contract_str, 0)
 
-        # Build numpy array in exact order expected by the model:
+        # Build numpy array matching model order:
         # ['Age', 'Gender', 'Tenure', 'Usage Frequency', 'Support Calls', 'Payment Delay', 'Subscription Type', 'Contract Length', 'Total Spend', 'Last Interaction']
         features = np.array([[
             age, gender, tenure, usage_freq, support_calls,
@@ -879,9 +883,9 @@ def predict():
             confidence = round(float(np.max(probs)) * 100, 1)
             risk_score = round(float(probs[1]) * 100, 1) if len(probs) > 1 else int(prediction * 100)
 
-        pred_text = "Churn Detected" if prediction == 1 else "No Churn (Retained)"
+        pred_text = "Customer Churn Likely" if prediction == 1 else "Customer Retained"
 
-        # Prepare numerical feature scaled representation for chart visualizer
+        # Feature impact map for charts
         features_dict = {
             'Age': age,
             'Tenure': tenure,
