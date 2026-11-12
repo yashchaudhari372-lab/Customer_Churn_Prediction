@@ -1,6 +1,6 @@
 # Customer Churn Prediction & Analytics | AdaBoost Machine Learning
 
-![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python) ![Flask](https://img.shields.io/badge/Flask-Web%20App-black?logo=flask) ![Scikit-learn](https://img.shields.io/badge/ML-AdaBoost-orange) ![Deployment](https://img.shields.io/badge/Deployment-Vercel-black?logo=vercel)
+![Python](https://img.shields.io/badge/Python-3.x-blue?logo=python) ![Flask](https://img.shields.io/badge/Flask-Web%20App-black?logo=flask) ![Scikit-learn](https://img.shields.io/badge/ML-AdaBoost-orange) ![Deployment](https://img.shields.io/badge/Deployment-Vercel-black?logo=vercel).
 
 **An interactive machine learning application that predicts customer churn and presents customer-retention risk insights using a trained AdaBoost classification model.**
 
